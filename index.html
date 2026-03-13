@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        /* Accessibility enhancements */
+        [tabindex] { outline: none; }
+        button:focus { outline: 2px solid #00f; }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Voice Assistant</h1>
+        <button id="startBtn">Start</button>
+        <div id="history" aria-live="polite"></div>
+    </div>
+
+    <script>
+        const API_KEY = process.env.API_KEY; // Ensure your API key is set in environment variables
+        let conversationHistory = [];
+
+        async function initiateVoiceAssistant() {
+            try {
+                const response = await fetch('https://api.example.com/voice-assistant', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${API_KEY}` },
+                    body: JSON.stringify({ query: 'Hello' })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                updateConversationHistory(data.response);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to initiate voice assistant. Please try again.');
+            }
+        }
+
+        function updateConversationHistory(response) {
+            conversationHistory.push(response);
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = conversationHistory.join('<br/>');
+        }
+
+        document.getElementById('startBtn').addEventListener('click', initiateVoiceAssistant);
+
+        // Mobile permissions request
+        if (navigator.permissions) {
+            navigator.permissions.query({ name: 'microphone' }).then(permissionStatus => {
+                if (permissionStatus.state === 'granted') {
+                    console.log('Microphone access granted.');
+                } else {
+                    console.log('Microphone access denied.');
+                }
+            });
+        }
+
+        // Rate limiting functionality
+        let lastInvocationTime = 0;
+        const RATE_LIMIT = 2000; // 2 seconds
+
+        function canInvoke() {
+            const currentTime = Date.now();
+            if (currentTime - lastInvocationTime >= RATE_LIMIT) {
+                lastInvocationTime = currentTime;
+                return true;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>
